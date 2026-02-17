@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>নিউজ ফটোকার্ড ড্যাশবোর্ড</title>
+    <link href="https://banglawebfonts.pages.dev/css/bornomala.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root { --primary: #e41e26; --dark: #1a1a1a; --bg-gray: #f8f9fa; }
+        body { font-family: 'Bornomala', serif; background: var(--bg-gray); margin: 0; color: #333; }
+        
+        /* মেইন লেআউট */
+        .container {
+            display: flex;
+            flex-direction: row;
+            min-height: 100vh;
+        }
+
+        /* বাম পাশ: প্রিভিউ সেকশন */
+        .preview-section {
+            flex: 1.2;
+            background: #e9ecef;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 30px;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            box-shadow: inset -10px 0 20px rgba(0,0,0,0.05);
+        }
+
+        /* ডান পাশ: ফাংশন সেকশন */
+        .function-section {
+            flex: 0.8;
+            background: white;
+            padding: 40px;
+            overflow-y: auto;
+            height: 100vh;
+            box-sizing: border-box;
+        }
+
+        /* ফটোকার্ড ডিজাইন */
+        #photocard {
+            width: 600px;
+            height: 600px;
+            position: relative;
+            background-color: #fff;
+            background-size: cover;
+            background-position: center;
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+            flex-shrink: 0;
+        }
+
+        /* কার্ড এলিমেন্টস */
+        .image-frame { width: 600px; height: 380px; position: absolute; top: 0; left: 0; overflow: hidden; background: #ddd; }
+        #main-img { width: 100%; height: 100%; object-fit: cover; }
+        .logo-box { position: absolute; top: 320px; left: 50%; transform: translateX(-50%); z-index: 10; }
+        #logo-img { width: 120px; height: auto; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.5)); }
+        .headline-container { position: absolute; top: 425px; width: 100%; text-align: center; padding: 0 30px; box-sizing: border-box; }
+        #news-title { font-size: 30px; font-weight: 700; line-height: 1.3; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); }
+        .white { color: #fff; display: block; }
+        .yellow { color: #FFD700; display: block; }
+        .info-bar { position: absolute; bottom: 34px; width: 100%; padding: 0 45px; display: flex; justify-content: space-between; box-sizing: border-box; color: #000; font-weight: bold; font-size: 16px; }
+
+        /* ফাংশনাল এলিমেন্টস */
+        h2 { margin-top: 0; color: var(--primary); border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .input-group { margin-bottom: 20px; }
+        label { font-size: 14px; font-weight: bold; display: block; margin-bottom: 8px; color: #666; }
+        input[type="text"], textarea { width: 100%; padding: 12px; border: 1.5px solid #eee; border-radius: 8px; font-family: inherit; font-size: 15px; }
+        input:focus { border-color: var(--primary); outline: none; }
+        
+        .grid-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
+        button { padding: 14px; cursor: pointer; border: none; border-radius: 8px; font-weight: bold; font-family: inherit; transition: 0.3s; }
+        .btn-fetch { background: var(--primary); color: white; }
+        .btn-down { background: var(--dark); color: white; }
+        .btn-reset { background: #6c757d; color: white; }
+        .btn-delete { background: #ffeded; color: #d63031; font-size: 12px; margin-top: 8px; border: 1px solid #fab1a0; }
+        button:hover { opacity: 0.9; transform: translateY(-2px); }
+
+        .settings-card { background: #fdfdfd; border: 1px solid #eee; padding: 15px; border-radius: 10px; margin-top: 20px; }
+
+        /* রেসপন্সিভ (মোবাইল) */
+        @media (max-width: 1000px) {
+            .container { flex-direction: column; }
+            .preview-section { height: auto; position: relative; padding: 20px; }
+            #photocard { transform: scale(0.55); margin: -120px 0; }
+            .function-section { height: auto; padding: 25px; }
+        }
+
+        .loader { display: none; color: var(--primary); font-weight: bold; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="preview-section">
+            <div id="photocard">
+                <div class="image-frame"><img id="main-img" src="" alt=""></div>
+                <div class="logo-box"><img id="logo-img" src="https://i.imgur.com/aCYgmm1.png"></div>
+                <div class="headline-container">
+                    <div id="news-title">
+                        <span class="white" id="t1">শিরোনামের প্রথম অংশ</span>
+                        <span class="yellow" id="t2">শিরোনামের দ্বিতীয় অংশ</span>
+                    </div>
+                </div>
+                <div class="info-bar"><div id="news-date"></div><div id="news-day"></div></div>
+            </div>
+            <p style="margin-top: 20px; color: #888; font-size: 14px;">লাইভ প্রিভিউ (৬০০x৬০০)</p>
+        </div>
+
+        <div class="function-section">
+            <h2>কন্ট্রোল প্যানেল</h2>
+            
+            <div class="loader" id="loader">খবর সংগ্রহ করা হচ্ছে...</div>
+
+            <div class="input-group">
+                <label>নিউজ লিংক (অটো ফেচ)</label>
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="linkInput" placeholder="লিংক এখানে পেস্ট করুন...">
+                    <button class="btn-fetch" onclick="fetchNews()" style="white-space:nowrap;">লোড</button>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label>শিরোনাম এডিট (ম্যানুয়াল)</label>
+                <textarea id="editTitle" rows="3" placeholder="নিউজ শিরোনাম এখানে লিখুন..." oninput="updateText()"></textarea>
+            </div>
+
+            <div class="input-group">
+                <label>ফন্ট সাইজ অ্যাডজাস্ট: <span id="sizeVal">30</span>px</label>
+                <input type="range" id="sizeSlider" min="20" max="50" value="30" style="width:100%" oninput="updateSize()">
+            </div>
+
+            <div class="settings-card">
+                <label style="color: var(--primary);">⚙️ কাস্টম সেটিংস (লোকাল সেভ)</label>
+                <div class="grid-btns" style="margin-top:10px;">
+                    <div>
+                        <label style="font-size:12px;">আপলোড লোগো</label>
+                        <input type="file" accept="image/*" onchange="handleUpload(this, 'logo')" style="font-size:11px; width:100%">
+                        <button class="btn-delete" onclick="removeStored('logo')">রিসেট লোগো</button>
+                    </div>
+                    <div>
+                        <label style="font-size:12px;">আপলোড ব্যাকগ্রাউন্ড</label>
+                        <input type="file" accept="image/*" onchange="handleUpload(this, 'bg')" style="font-size:11px; width:100%">
+                        <button class="btn-delete" onclick="removeStored('bg')">রিসেট BG</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid-btns">
+                <button class="btn-reset" onclick="resetAll()">সব মুছুন</button>
+                <button class="btn-down" onclick="downloadCard()">ডাউনলোড ফটোকার্ড</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const defaultConfig = {
+            bg: 'https://i.imgur.com/Eo8N40H.png',
+            logo: 'https://i.imgur.com/aCYgmm1.png'
+        };
+
+        window.onload = () => {
+            loadStoredData();
+            setBnInfo();
+        };
+
+        function loadStoredData() {
+            const storedBg = localStorage.getItem('custom_bg') || defaultConfig.bg;
+            const storedLogo = localStorage.getItem('custom_logo') || defaultConfig.logo;
+            document.getElementById('photocard').style.backgroundImage = `url(${storedBg})`;
+            document.getElementById('logo-img').src = storedLogo;
+        }
+
+        function handleUpload(input, type) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const data = e.target.result;
+                    if(type === 'bg') {
+                        localStorage.setItem('custom_bg', data);
+                        document.getElementById('photocard').style.backgroundImage = `url(${data})`;
+                    } else {
+                        localStorage.setItem('custom_logo', data);
+                        document.getElementById('logo-img').src = data;
+                    }
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function removeStored(type) {
+            localStorage.removeItem(type === 'bg' ? 'custom_bg' : 'custom_logo');
+            loadStoredData();
+        }
+
+        function updateText() {
+            const text = document.getElementById('editTitle').value;
+            const words = text.split(' ');
+            const half = Math.ceil(words.length / 2);
+            document.getElementById('t1').innerText = words.slice(0, half).join(' ') || 'শিরোনামের প্রথম অংশ';
+            document.getElementById('t2').innerText = words.slice(half).join(' ') || 'শিরোনামের দ্বিতীয় অংশ';
+        }
+
+        function updateSize() {
+            const val = document.getElementById('sizeSlider').value;
+            document.getElementById('news-title').style.fontSize = val + 'px';
+            document.getElementById('sizeVal').innerText = val;
+        }
+
+        async function fetchNews() {
+            const url = document.getElementById('linkInput').value;
+            if(!url) return alert("লিংক দিন!");
+            document.getElementById('loader').style.display = "block";
+
+            try {
+                const response = await fetch(`https://api.microlink.io?url=${encodeURIComponent(url)}`);
+                const result = await response.json();
+                if(result.status === 'success') {
+                    const data = result.data;
+                    document.getElementById('editTitle').value = data.title;
+                    updateText();
+                    if(data.image) {
+                        document.getElementById('main-img').src = `https://images.weserv.nl/?url=${encodeURIComponent(data.image.url)}&w=600&h=380&fit=cover`;
+                    }
+                }
+            } catch (err) { alert("Error fetching news data!"); }
+            document.getElementById('loader').style.display = "none";
+        }
+
+        function setBnInfo() {
+            const months = ["জানুয়ারি", "ফেব্রুয়ারি", "মার্চ", "এপ্রিল", "মে", "জুন", "জুলাই", "আগস্ট", "সেপ্টেম্বর", "অক্টোবর", "নভেম্বর", "ডিসেম্বর"];
+            const days = ["রবিবার", "সোমবার", "মঙ্গলবার", "বুধবার", "বৃহস্পতিবার", "শুক্রবার", "শনিবার"];
+            const d = new Date();
+            const en2bn = n => n.toString().replace(/\d/g, d => "০১২৩৪৫৬৭৮৯"[d]);
+            document.getElementById('news-date').innerText = `${en2bn(d.getDate())} ${months[d.getMonth()]} ${en2bn(d.getFullYear())}`;
+            document.getElementById('news-day').innerText = days[d.getDay()];
+        }
+
+        function resetAll() {
+            if(confirm("সব ডাটা মুছে ফেলবেন?")) {
+                document.getElementById('linkInput').value = '';
+                document.getElementById('editTitle').value = '';
+                document.getElementById('main-img').src = '';
+                document.getElementById('t1').innerText = 'শিরোনামের প্রথম অংশ';
+                document.getElementById('t2').innerText = 'শিরোনামের দ্বিতীয় অংশ';
+            }
+        }
+
+        function downloadCard() {
+            const card = document.getElementById('photocard');
+            const originalTransform = card.style.transform;
+            card.style.transform = "none"; // ডাউনলোড কোয়ালিটি ঠিক রাখতে
+
+            html2canvas(card, { useCORS: true, scale: 3 }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = 'NewsCard_' + Date.now() + '.png';
+                link.href = canvas.toDataURL("image/png");
+                link.click();
+                card.style.transform = originalTransform;
+            });
+        }
+    </script>
+</body>
+</html>
